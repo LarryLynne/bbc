@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Попутки Села (Испр. даты)</title>
+    <title>Поїздки нашого села</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
@@ -12,7 +12,6 @@
             background-color: var(--tg-theme-bg-color, #f5f5f5);
             color: var(--tg-theme-text-color, #222);
         }
-        /* Шапка с вкладками */
         .tabs {
             display: flex;
             background-color: var(--tg-theme-secondary-bg-color, #fff);
@@ -28,11 +27,9 @@
             border-bottom-color: var(--tg-theme-button-color, #3390ec);
             color: var(--tg-theme-button-color, #3390ec);
         }
-        /* Контейнеры контента */
         .content { padding: 15px; max-width: 500px; margin: 0 auto; }
         .hidden { display: none; }
         
-        /* Карточка поездки */
         .ride-card {
             background: var(--tg-theme-secondary-bg-color, #fff);
             border-radius: 12px; padding: 15px; margin-bottom: 12px;
@@ -41,13 +38,14 @@
         }
         .ride-route { font-size: 18px; font-weight: bold; color: var(--tg-theme-button-color, #3390ec); }
         .ride-info { font-size: 14px; margin: 8px 0; line-height: 1.4; }
-        .ride-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+        .ride-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; gap: 8px; }
         .seats-badge {
             background: #e6f2ff; color: #0066cc;
             padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 13px;
         }
+        .badge-my { background: #fff3cd; color: #856404; }
+        .badge-booked { background: #d4edda; color: #155724; }
         
-        /* Формы и кнопки */
         input, select {
             width: 100%; padding: 12px; margin: 6px 0 15px;
             border: 1px solid #ccc; border-radius: 8px;
@@ -60,33 +58,36 @@
             color: var(--tg-theme-button-text-color, #fff);
             font-size: 16px; font-weight: bold; cursor: pointer;
         }
-        .btn-book {
-            padding: 8px 15px; font-size: 14px; width: auto;
+        .btn-action {
+            padding: 8px 14px; font-size: 14px; width: auto; border-radius: 6px;
+        }
+        .btn-cancel {
+            background-color: #dc3545 !important;
+            color: #fff !important;
         }
     </style>
 </head>
 <body>
 
-<!-- Вкладки сверху -->
 <div class="tabs">
-    <div class="tab-btn active" onclick="switchTab('search')">🔍 Найти попутку</div>
-    <div class="tab-btn" onclick="switchTab('create')">➕ Создать поездку</div>
+    <div class="tab-btn active" onclick="switchTab('search')">🔍 Знайти поїздку</div>
+    <div class="tab-btn" onclick="switchTab('create')">➕ Запропонувати</div>
 </div>
 
-<!-- ВКЛАДКА 1: ПОИСК ПОЕЗДОК -->
+<!-- ВКАДКА 1: ПОШУК ПОЇЗДОК -->
 <div id="tab-search" class="content">
-    <div id="rides-list">Загрузка поездок...</div>
+    <div id="rides-list">🔄 Завантаження поїздок...</div>
 </div>
 
-<!-- ВКЛАДКА 2: СОЗДАНИЕ ПОЕЗДКИ -->
+<!-- ВКЛАДКА 2: СТВОРЕННЯ ПОЇЗДКИ -->
 <div id="tab-create" class="content hidden">
-    <h3>Предложить поездку</h3>
+    <h3>Запропонувати поїздку</h3>
     
-    <label>Откуда:</label>
-    <input type="text" id="from" value="Покровське" placeholder="Например: Покровське (центр)">
+    <label>Звідки:</label>
+    <input type="text" id="from" value="Покровське" placeholder="Наприклад: Покровське (центр)">
     
-    <label>Куда:</label>
-    <input type="text" id="to" value="Полтава" placeholder="Например: Полтава (ж/д вокзал)">
+    <label>Куди:</label>
+    <input type="text" id="to" value="Полтава" placeholder="Наприклад: Полтава (зал. вокзал)">
     
     <div style="display: flex; gap: 10px;">
         <div style="flex: 1;">
@@ -94,39 +95,37 @@
             <input type="date" id="date">
         </div>
         <div style="flex: 1;">
-            <label>Время выезда:</label>
+            <label>Час виїзду:</label>
             <input type="time" id="time" value="08:00">
         </div>
     </div>
     
     <div style="display: flex; gap: 10px;">
         <div style="flex: 1;">
-            <label>Свободных мест:</label>
+            <label>Вільних місць:</label>
             <input type="number" id="seats" value="3" min="1" max="8">
         </div>
         <div style="flex: 1;">
-            <label>Цена с чела (или коммент):</label>
-            <input type="text" id="price" value="100 грн" placeholder="Бесплатно / 100 грн">
+            <label>Ціна з пасажира (або коментар):</label>
+            <input type="text" id="price" value="100 грн" placeholder="Безкоштовно / 100 грн">
         </div>
     </div>
     
-    <button class="btn" onclick="submitRide()">🚀 Опубликовать поездку</button>
+    <button class="btn" onclick="submitRide()">🚀 Опублікувати поїздку</button>
 </div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
-    tg.expand(); // Растягиваем окно приложения на всю высоту экрана
+    tg.expand();
 
-    const user = tg.initDataUnsafe?.user || { id: 12345, first_name: "Тестовый", username: "test_user" };
+    const user = tg.initDataUnsafe?.user || { id: 12345, first_name: "Тестовий", username: "test_user" };
     
-    // 🚨🚨 ВСТАВЬ СЮДА СВОЮ ССЫЛКУ НА APPS SCRIPT: 🚨🚨
+    // 🚨🚨 ВСТАВ СЮДИ СВОЮ ПОСИЛАННЯ НА APPS SCRIPT: 🚨🚨
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwInc9qMr6vP3ybAwnp76HsJPvA-PX1ayZREiIY1U4YuRRhXYaTaeviBMTJeeahlRfl/exec";
 
-    // Устанавливаем сегодняшнюю дату по умолчанию в форму
     document.getElementById('date').valueAsDate = new Date();
 
-    // Переключение вкладок
     function switchTab(tab) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById('tab-search').classList.add('hidden');
@@ -135,65 +134,73 @@
         if (tab === 'search') {
             document.querySelectorAll('.tab-btn')[0].classList.add('active');
             document.getElementById('tab-search').classList.remove('hidden');
-            loadRides(); // Перезагружаем список при открытии вкладки
+            loadRides();
         } else {
             document.querySelectorAll('.tab-btn')[1].classList.add('active');
             document.getElementById('tab-create').classList.remove('hidden');
         }
     }
 
-    // --- ЛОГИКА 1: Загрузка списка поездок ---
+    // --- ЛОГІКА 1: Завантаження списку поїздок ---
     function loadRides() {
         const container = document.getElementById("rides-list");
-        container.innerHTML = "🔄 Загрузка поездок...";
+        container.innerHTML = "🔄 Завантаження поїздок...";
         
         fetch(APPS_SCRIPT_URL, {
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "get_rides" })
+            body: JSON.stringify({ action: "get_rides", userId: user.id })
         })
         .then(res => res.json())
         .then(data => {
             if (data.status !== "success") {
-                container.innerHTML = "❌ Ошибка загрузки данных.";
+                container.innerHTML = "❌ Помилка завантаження даних.";
                 return;
             }
             if (data.rides.length === 0) {
-                container.innerHTML = "<p style='text-align:center; color:#888; margin-top:40px;'>Пока нет активных поездок. Будь первым, кто предложит!</p>";
+                container.innerHTML = "<p style='text-align:center; color:#888; margin-top:40px;'>Поки немає активних поїздок.<br>Будьте першим, хто запропонує!</p>";
                 return;
             }
 
-            container.innerHTML = ""; // Очищаем
+            container.innerHTML = "";
             data.rides.forEach(ride => {
-                // Не показываем водителю кнопку бронирования на его же поездку
-                const isMyRide = (ride.driverId === user.id);
-                
+                let badgeHtml = `<span class="seats-badge">Місць: ${ride.seats}</span>`;
+                let actionBtnHtml = `<button class="btn btn-action" onclick="bookRide('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">Забронювати</button>`;
+
+                // Якщо це власна поїздка водія
+                if (ride.isMyRide) {
+                    badgeHtml = `<span class="seats-badge badge-my">Моя поїздка (Вільних: ${ride.seats})</span>`;
+                    actionBtnHtml = `<button class="btn btn-action btn-cancel" onclick="cancelRide('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">❌ Скасувати поїздку</button>`;
+                } 
+                // Якщо користувач вже забронював цю поїздку
+                else if (ride.isBookedByMe) {
+                    badgeHtml = `<span class="seats-badge badge-booked">✅ Заброньовано вами</span>`;
+                    actionBtnHtml = `<button class="btn btn-action btn-cancel" onclick="cancelBooking('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">❌ Скасувати бронь</button>`;
+                }
+
                 const card = document.createElement("div");
                 card.className = "ride-card";
                 card.innerHTML = `
                     <div class="ride-route">🚗 ${ride.from} ➔ ${ride.to}</div>
                     <div class="ride-info">
-                        📅 <b>${ride.dateTimeDisplay}</b><br> <!-- 🚨🚨 Используем новую форматированную строку -->
-                        👤 Водитель: ${ride.driverName} <br>
-                        💰 Цена: ${ride.price}
+                        📅 <b>${ride.dateTimeDisplay}</b><br>
+                        👤 Водій: ${ride.driverName} <br>
+                        💰 Ціна: ${ride.price}
                     </div>
                     <div class="ride-meta">
-                        <span class="seats-badge">Мест: ${ride.seats}</span>
-                        ${isMyRide ? 
-                            `<span style="color:#888; font-size:13px;">Моя поездка</span>` : 
-                            `<button class="btn btn-book" onclick="bookRide('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">Забронировать</button>`
-                        }
+                        ${badgeHtml}
+                        ${actionBtnHtml}
                     </div>
                 `;
                 container.appendChild(card);
             });
         })
         .catch(err => {
-            container.innerHTML = "❌ Ошибка связи с сервером.";
+            container.innerHTML = "❌ Помилка зв'язку з сервером.";
         });
     }
 
-    // --- ЛОГИКА 2: Создание поездки (Водитель) ---
+    // --- ЛОГІКА 2: Створення поїздки ---
     function submitRide() {
         const from = document.getElementById("from").value;
         const to = document.getElementById("to").value;
@@ -203,12 +210,12 @@
         const price = document.getElementById("price").value;
 
         if (!from || !to || !date || !time) {
-            alert("Пожалуйста, заполни все поля!");
+            alert("Будь ласка, заповніть усі поля!");
             return;
         }
 
         const btn = document.querySelector("#tab-create .btn");
-        btn.innerText = "⏳ Публикуем...";
+        btn.innerText = "⏳ Публікуємо...";
         btn.disabled = true;
 
         const payload = {
@@ -224,20 +231,20 @@
         })
         .then(res => res.json())
         .then(data => {
-            btn.innerText = "🚀 Опубликовать поездку";
+            btn.innerText = "🚀 Опублікувати поїздку";
             btn.disabled = false;
             if (data.status === "success") {
-                alert("✅ Поездку успешно создано!");
-                switchTab('search'); // Переключаем пользователя на список поездок
+                alert("✅ Поїздку успішно створено!");
+                switchTab('search');
             } else {
-                alert("Ошибка: " + data.message);
+                alert("Помилка: " + data.message);
             }
         });
     }
 
-    // --- ЛОГИКА 3: Бронирование места (Пассажир) ---
+    // --- ЛОГІКА 3: Бронювання місця ---
     function bookRide(rideId, rowIdx, driverId, rideDetails) {
-        if (!confirm(`Точно бронируем 1 место на поездку ${rideDetails}?`)) return;
+        if (!confirm(`Бронюємо 1 місце на поїздку:\n${rideDetails}?`)) return;
 
         const payload = {
             action: "book_ride",
@@ -256,15 +263,62 @@
         .then(res => res.json())
         .then(data => {
             if (data.status === "success") {
-                alert("🎉 Место забронировано! Водителю отправлено уведомление в Телеграм с твоими контактами.");
-                loadRides(); // Перезагружаем список (мест станет на 1 меньше)
+                alert("🎉 Місце заброньовано!\nВодію відправлено сповіщення у Telegram з вашими контактами.");
+                loadRides();
             } else {
-                alert("❌ Ошибка: " + data.message);
+                alert("❌ Помилка: " + data.message);
             }
         });
     }
 
-    // Загружаем поездки сразу при открытии приложения
+    // --- ЛОГІКА 4: Скасування поїздки водієм ---
+    function cancelRide(rideId, rowIdx, rideDetails) {
+        if (!confirm(`Ви впевнені, що хочете скасувати поїздку:\n${rideDetails}?\n\nУсім пасажирам, які встигли забронювати місця, прийде сповіщення в Telegram.`)) return;
+
+        fetch(APPS_SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "cancel_ride", rideId: rideId, rowIdx: rowIdx, rideDetails: rideDetails })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                alert("🗑️ Поїздку скасовано!");
+                loadRides();
+            } else {
+                alert("❌ Помилка: " + data.message);
+            }
+        });
+    }
+
+    // --- ЛОГІКА 5: Скасування броні пасажиром ---
+    function cancelBooking(rideId, rowIdx, driverId, rideDetails) {
+        if (!confirm(`Скасувати ваше бронювання на поїздку:\n${rideDetails}?`)) return;
+
+        fetch(APPS_SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ 
+                action: "cancel_booking", 
+                rideId: rideId, 
+                rowIdx: rowIdx, 
+                driverId: driverId,
+                rideDetails: rideDetails,
+                userId: user.id,
+                userName: user.first_name
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                alert("✅ Бронювання скасовано. Водію надіслано сповіщення, а вільне місце повернуто в поїздку!");
+                loadRides();
+            } else {
+                alert("❌ Помилка: " + data.message);
+            }
+        });
+    }
+
     loadRides();
 </script>
 </body>
