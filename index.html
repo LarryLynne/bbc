@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Попутки Села</title>
+    <title>Попутки Села (Испр. даты)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
@@ -83,10 +83,10 @@
     <h3>Предложить поездку</h3>
     
     <label>Откуда:</label>
-    <input type="text" id="from" value="Наше Село" placeholder="Например: Село (центр)">
+    <input type="text" id="from" value="Покровське" placeholder="Например: Покровське (центр)">
     
     <label>Куда:</label>
-    <input type="text" id="to" value="Город" placeholder="Например: Город (ж/д вокзал)">
+    <input type="text" id="to" value="Полтава" placeholder="Например: Полтава (ж/д вокзал)">
     
     <div style="display: flex; gap: 10px;">
         <div style="flex: 1;">
@@ -106,7 +106,7 @@
         </div>
         <div style="flex: 1;">
             <label>Цена с чела (или коммент):</label>
-            <input type="text" id="price" value="50 грн" placeholder="Бесплатно / 50 грн">
+            <input type="text" id="price" value="100 грн" placeholder="Бесплатно / 100 грн">
         </div>
     </div>
     
@@ -120,7 +120,7 @@
 
     const user = tg.initDataUnsafe?.user || { id: 12345, first_name: "Тестовый", username: "test_user" };
     
-    // ВСТАВЬ СЮДА ТВОЮ ССЫЛКУ НА APPS SCRIPT:
+    // 🚨🚨 ВСТАВЬ СЮДА СВОЮ ССЫЛКУ НА APPS SCRIPT: 🚨🚨
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzfDP5qMPWnR40DKJ3Oig5U2-lO4kDJTD08E4hE8noFoGusxfCvL-CBNgPX1TIsFae/exec";
 
     // Устанавливаем сегодняшнюю дату по умолчанию в форму
@@ -173,7 +173,7 @@
                 card.innerHTML = `
                     <div class="ride-route">🚗 ${ride.from} ➔ ${ride.to}</div>
                     <div class="ride-info">
-                        📅 <b>${ride.date}</b> в <b>${ride.time}</b><br>
+                        📅 <b>${ride.dateTimeDisplay}</b><br> <!-- 🚨🚨 Используем новую форматированную строку -->
                         👤 Водитель: ${ride.driverName} <br>
                         💰 Цена: ${ride.price}
                     </div>
@@ -181,7 +181,7 @@
                         <span class="seats-badge">Мест: ${ride.seats}</span>
                         ${isMyRide ? 
                             `<span style="color:#888; font-size:13px;">Моя поездка</span>` : 
-                            `<button class="btn btn-book" onclick="bookRide('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.time})')">Забронировать</button>`
+                            `<button class="btn btn-book" onclick="bookRide('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">Забронировать</button>`
                         }
                     </div>
                 `;
