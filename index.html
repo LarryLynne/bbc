@@ -3,120 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тест Mini App</title>
-    <!-- Подключаем официальную библиотеку Telegram -->
+    <title>Попутки Села</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
-            /* Используем цвета самой темы Телеграма пользователя */
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
+            margin: 0; padding: 0;
+            background-color: var(--tg-theme-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #222);
         }
-        .box {
-            max-width: 400px;
-            margin: 0 auto;
+        /* Шапка с вкладками */
+        .tabs {
+            display: flex;
+            background-color: var(--tg-theme-secondary-bg-color, #fff);
+            border-bottom: 1px solid #ddd;
+            position: sticky; top: 0; z-index: 100;
         }
-        textarea {
-            width: 100%;
-            height: 80px;
-            margin-top: 10px;
-            padding: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 8px;
+        .tab-btn {
+            flex: 1; padding: 15px; text-align: center;
+            font-weight: bold; cursor: pointer;
+            border-bottom: 3px solid transparent;
         }
-        button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
+        .tab-btn.active {
+            border-bottom-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-color, #3390ec);
+        }
+        /* Контейнеры контента */
+        .content { padding: 15px; max-width: 500px; margin: 0 auto; }
+        .hidden { display: none; }
+        
+        /* Карточка поездки */
+        .ride-card {
+            background: var(--tg-theme-secondary-bg-color, #fff);
+            border-radius: 12px; padding: 15px; margin-bottom: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #eee;
+        }
+        .ride-route { font-size: 18px; font-weight: bold; color: var(--tg-theme-button-color, #3390ec); }
+        .ride-info { font-size: 14px; margin: 8px 0; line-height: 1.4; }
+        .ride-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+        .seats-badge {
+            background: #e6f2ff; color: #0066cc;
+            padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 13px;
+        }
+        
+        /* Формы и кнопки */
+        input, select {
+            width: 100%; padding: 12px; margin: 6px 0 15px;
+            border: 1px solid #ccc; border-radius: 8px;
+            box-sizing: border-box; font-size: 16px;
+        }
+        label { font-size: 14px; font-weight: bold; }
+        .btn {
+            width: 100%; padding: 14px; border: none; border-radius: 8px;
             background-color: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
+            color: var(--tg-theme-button-text-color, #fff);
+            font-size: 16px; font-weight: bold; cursor: pointer;
         }
-        #status {
-            margin-top: 15px;
-            font-weight: bold;
-            text-align: center;
+        .btn-book {
+            padding: 8px 15px; font-size: 14px; width: auto;
         }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2 id="greeting">Привет! Загружаю данные...</h2>
-    <p>Напиши что-нибудь, и мы отправим это в Гугл-таблицу:</p>
+<!-- Вкладки сверху -->
+<div class="tabs">
+    <div class="tab-btn active" onclick="switchTab('search')">🔍 Найти попутку</div>
+    <div class="tab-btn" onclick="switchTab('create')">➕ Создать поездку</div>
+</div>
+
+<!-- ВКЛАДКА 1: ПОИСК ПОЕЗДОК -->
+<div id="tab-search" class="content">
+    <div id="rides-list">Загрузка поездок...</div>
+</div>
+
+<!-- ВКЛАДКА 2: СОЗДАНИЕ ПОЕЗДКИ -->
+<div id="tab-create" class="content hidden">
+    <h3>Предложить поездку</h3>
     
-    <textarea id="msgInput" placeholder="Текст сообщения..."></textarea>
-    <button id="sendBtn">Отправить в летопись</button>
-    <div id="status"></div>
+    <label>Откуда:</label>
+    <input type="text" id="from" value="Наше Село" placeholder="Например: Село (центр)">
+    
+    <label>Куда:</label>
+    <input type="text" id="to" value="Город" placeholder="Например: Город (ж/д вокзал)">
+    
+    <div style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+            <label>Дата:</label>
+            <input type="date" id="date">
+        </div>
+        <div style="flex: 1;">
+            <label>Время выезда:</label>
+            <input type="time" id="time" value="08:00">
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+            <label>Свободных мест:</label>
+            <input type="number" id="seats" value="3" min="1" max="8">
+        </div>
+        <div style="flex: 1;">
+            <label>Цена с чела (или коммент):</label>
+            <input type="text" id="price" value="50 грн" placeholder="Бесплатно / 50 грн">
+        </div>
+    </div>
+    
+    <button class="btn" onclick="submitRide()">🚀 Опубликовать поездку</button>
 </div>
 
 <script>
-    // 1. Инициализируем Telegram Web App
     const tg = window.Telegram.WebApp;
-    tg.ready(); // Говорим Телеграму, что приложение загрузилось
+    tg.ready();
+    tg.expand(); // Растягиваем окно приложения на всю высоту экрана
 
-    // 2. Вытаскиваем данные пользователя, который открыл аппку
-    const user = tg.initDataUnsafe?.user || { id: 0, first_name: "Инкогнито (тест в браузере)" };
+    const user = tg.initDataUnsafe?.user || { id: 12345, first_name: "Тестовый", username: "test_user" };
     
-    // 3. Меняем заголовок — приветствуем по имени из Телаграмата!
-    document.getElementById("greeting").innerText = `Привет, ${user.first_name}! 👋`;
-
-    // 4. СЮДА ВСТАВИШЬ ССЫЛКУ ИЗ ГУГЛ-СКРИПТА:
+    // ВСТАВЬ СЮДА ТВОЮ ССЫЛКУ НА APPS SCRIPT:
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzfDP5qMPWnR40DKJ3Oig5U2-lO4kDJTD08E4hE8noFoGusxfCvL-CBNgPX1TIsFae/exec";
 
-    // 5. Логика отправки
-    document.getElementById("sendBtn").addEventListener("click", function() {
-        const text = document.getElementById("msgInput").value;
-        const statusDiv = document.getElementById("status");
+    // Устанавливаем сегодняшнюю дату по умолчанию в форму
+    document.getElementById('date').valueAsDate = new Date();
 
-        if (!text) {
-            alert("Напиши хоть пару слов!");
+    // Переключение вкладок
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('tab-search').classList.add('hidden');
+        document.getElementById('tab-create').classList.add('hidden');
+        
+        if (tab === 'search') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('tab-search').classList.remove('hidden');
+            loadRides(); // Перезагружаем список при открытии вкладки
+        } else {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('tab-create').classList.remove('hidden');
+        }
+    }
+
+    // --- ЛОГИКА 1: Загрузка списка поездок ---
+    function loadRides() {
+        const container = document.getElementById("rides-list");
+        container.innerHTML = "🔄 Загрузка поездок...";
+        
+        fetch(APPS_SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "get_rides" })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== "success") {
+                container.innerHTML = "❌ Ошибка загрузки данных.";
+                return;
+            }
+            if (data.rides.length === 0) {
+                container.innerHTML = "<p style='text-align:center; color:#888; margin-top:40px;'>Пока нет активных поездок. Будь первым, кто предложит!</p>";
+                return;
+            }
+
+            container.innerHTML = ""; // Очищаем
+            data.rides.forEach(ride => {
+                // Не показываем водителю кнопку бронирования на его же поездку
+                const isMyRide = (ride.driverId === user.id);
+                
+                const card = document.createElement("div");
+                card.className = "ride-card";
+                card.innerHTML = `
+                    <div class="ride-route">🚗 ${ride.from} ➔ ${ride.to}</div>
+                    <div class="ride-info">
+                        📅 <b>${ride.date}</b> в <b>${ride.time}</b><br>
+                        👤 Водитель: ${ride.driverName} <br>
+                        💰 Цена: ${ride.price}
+                    </div>
+                    <div class="ride-meta">
+                        <span class="seats-badge">Мест: ${ride.seats}</span>
+                        ${isMyRide ? 
+                            `<span style="color:#888; font-size:13px;">Моя поездка</span>` : 
+                            `<button class="btn btn-book" onclick="bookRide('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.time})')">Забронировать</button>`
+                        }
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        })
+        .catch(err => {
+            container.innerHTML = "❌ Ошибка связи с сервером.";
+        });
+    }
+
+    // --- ЛОГИКА 2: Создание поездки (Водитель) ---
+    function submitRide() {
+        const from = document.getElementById("from").value;
+        const to = document.getElementById("to").value;
+        const date = document.getElementById("date").value;
+        const time = document.getElementById("time").value;
+        const seats = document.getElementById("seats").value;
+        const price = document.getElementById("price").value;
+
+        if (!from || !to || !date || !time) {
+            alert("Пожалуйста, заполни все поля!");
             return;
         }
 
-        statusDiv.innerText = "Отправляем...";
-        statusDiv.style.color = "blue";
+        const btn = document.querySelector("#tab-create .btn");
+        btn.innerText = "⏳ Публикуем...";
+        btn.disabled = true;
 
-        // Собираем посылку
         const payload = {
-            userId: user.id,
-            userName: user.first_name + (user.last_name ? " " + user.last_name : ""),
-            message: text
+            action: "create_ride",
+            user: { id: user.id, name: user.first_name, username: user.username },
+            from, to, date, time, seats, price
         };
 
-        // Отправляем в Гугл-таблицу через Apps Script
-        // Важно: используем text/plain, чтобы браузер не ругался на CORS (защиту от чужих сайтов)
         fetch(APPS_SCRIPT_URL, {
             method: "POST",
-            headers: {
-                "Content-Type": "text/plain;charset=utf-8"
-            },
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify(payload)
         })
-        .then(response => response.json())
+        .then(res => res.json())
+        .then(data => {
+            btn.innerText = "🚀 Опубликовать поездку";
+            btn.disabled = false;
+            if (data.status === "success") {
+                alert("✅ Поездку успешно создано!");
+                switchTab('search'); // Переключаем пользователя на список поездок
+            } else {
+                alert("Ошибка: " + data.message);
+            }
+        });
+    }
+
+    // --- ЛОГИКА 3: Бронирование места (Пассажир) ---
+    function bookRide(rideId, rowIdx, driverId, rideDetails) {
+        if (!confirm(`Точно бронируем 1 место на поездку ${rideDetails}?`)) return;
+
+        const payload = {
+            action: "book_ride",
+            rideId: rideId,
+            rowIdx: rowIdx,
+            driverId: driverId,
+            rideDetails: rideDetails,
+            passenger: { id: user.id, name: user.first_name, username: user.username }
+        };
+
+        fetch(APPS_SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
         .then(data => {
             if (data.status === "success") {
-                statusDiv.innerText = "✅ Успешно записано в таблицу!";
-                statusDiv.style.color = "green";
-                document.getElementById("msgInput").value = ""; // Очищаем поле
+                alert("🎉 Место забронировано! Водителю отправлено уведомление в Телеграм с твоими контактами.");
+                loadRides(); // Перезагружаем список (мест станет на 1 меньше)
             } else {
-                statusDiv.innerText = "❌ Ошибка: " + data.message;
-                statusDiv.style.color = "red";
+                alert("❌ Ошибка: " + data.message);
             }
-        })
-        .catch(error => {
-            statusDiv.innerText = "❌ Ошибка сети!";
-            statusDiv.style.color = "red";
-            console.error(error);
         });
-    });
-</script>
+    }
 
+    // Загружаем поездки сразу при открытии приложения
+    loadRides();
+</script>
 </body>
 </html>
