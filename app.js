@@ -61,6 +61,7 @@ function resetFilters() {
 }
 
 // --- 🚨 МАЛЮВАННЯ КАРТОК (З КНОПКОЮ "ПАСАЖИРИ") ---
+// --- 🚨 МАЛЮВАННЯ КАРТОК (З ТЕСТОВИМ БРОНЮВАННЯМ ДЛЯ ВОДІЯ) ---
 function renderRides(rides) {
     const container = document.getElementById("rides-list");
     container.innerHTML = "";
@@ -74,11 +75,25 @@ function renderRides(rides) {
         let badgeHtml = `<span class="seats-badge">Вільних місць: ${ride.seats}</span>`;
         let actionBtnHtml = `<button class="btn btn-action" onclick="bookRide('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">Забронювати</button>`;
 
+        // 🚨 ЯКЩО ЦЕ ПОЇЗДКА ВОДІЯ:
         if (ride.isMyRide) {
-            // 🚨 НАША НОВА КНОПКА ДЛЯ ВОДІЯ:
             badgeHtml = `<button class="btn-small btn-chat" onclick="openPassengersModal('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">👥 Пасажири (${ride.bookedCount})</button>`;
-            actionBtnHtml = `<button class="btn btn-action btn-cancel" onclick="cancelRide('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">❌ Скасувати поїздку</button>`;
-        } else if (ride.isBookedByMe) {
+            
+            let cancelRideBtn = `<button class="btn btn-action btn-cancel" onclick="cancelRide('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">❌ Скасувати</button>`;
+            
+            // ДОДАЄМО ТЕСТОВУ КНОПКУ БРОНЮВАННЯ ДЛЯ САМОГО СЕБЕ:
+            let testBookBtn = "";
+            if (ride.isBookedByMe) {
+                testBookBtn = `<button class="btn btn-action" style="background:#28a745; color:#fff;" onclick="cancelBooking('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">🧪 Скасувати мою бронь</button>`;
+            } else if (ride.seats > 0) {
+                testBookBtn = `<button class="btn btn-action" style="background:#17a2b8; color:#fff;" onclick="bookRide('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">🧪 Тест-бронь</button>`;
+            }
+
+            // Групуємо кнопки водія в один акуратний рядок
+            actionBtnHtml = `<div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">${testBookBtn}${cancelRideBtn}</div>`;
+        } 
+        // 🚨 ЯКЩО ЦЕ ЧУЖА ПОЇЗДКА, АЛЕ Я ЇЇ ЗАБРОНЮВАВ:
+        else if (ride.isBookedByMe) {
             badgeHtml = `<span class="seats-badge badge-booked">✅ Заброньовано вами</span>`;
             actionBtnHtml = `<button class="btn btn-action btn-cancel" onclick="cancelBooking('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">❌ Скасувати бронь</button>`;
         }
