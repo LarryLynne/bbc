@@ -60,8 +60,6 @@ function resetFilters() {
     applyFilters();
 }
 
-// --- 🚨 МАЛЮВАННЯ КАРТОК (З КНОПКОЮ "ПАСАЖИРИ") ---
-// --- 🚨 МАЛЮВАННЯ КАРТОК (З ТЕСТОВИМ БРОНЮВАННЯМ ДЛЯ ВОДІЯ) ---
 function renderRides(rides) {
     const container = document.getElementById("rides-list");
     container.innerHTML = "";
@@ -75,13 +73,10 @@ function renderRides(rides) {
         let badgeHtml = `<span class="seats-badge">Вільних місць: ${ride.seats}</span>`;
         let actionBtnHtml = `<button class="btn btn-action" onclick="bookRide('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">Забронювати</button>`;
 
-        // 🚨 ЯКЩО ЦЕ ПОЇЗДКА ВОДІЯ (Залишаємо тільки управління пасажирами і скасування):
         if (ride.isMyRide) {
             badgeHtml = `<button class="btn-small btn-chat" onclick="openPassengersModal('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">👥 Пасажири (${ride.bookedCount})</button>`;
             actionBtnHtml = `<button class="btn btn-action btn-cancel" onclick="cancelRide('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">❌ Скасувати поїздку</button>`;
-        } 
-        // 🚨 ЯКЩО ЦЕ ЧУЖА ПОЇЗДКА, ЯКУ Я ЗАБРОНЮВАВ:
-        else if (ride.isBookedByMe) {
+        } else if (ride.isBookedByMe) {
             badgeHtml = `<span class="seats-badge badge-booked">✅ Заброньовано вами</span>`;
             actionBtnHtml = `<button class="btn btn-action btn-cancel" onclick="cancelBooking('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">❌ Скасувати бронь</button>`;
         }
@@ -105,7 +100,7 @@ function renderRides(rides) {
     }
 }
 
-// --- 🚨 ЛОГІКА МОДАЛЬНОГО ВІКНА ТА ВИСАДКИ ---
+// --- ЛОГІКА МОДАЛЬНОГО ВІКНА ---
 let activeModalRideRowIdx = 0;
 let activeModalRideDetails = "";
 
@@ -143,35 +138,22 @@ function openPassengersModal(rideId, rowIdx, rideDetails) {
     });
 }
 
-function closeModal() {
-    document.getElementById("modal-overlay").classList.add("hidden");
-}
+function closeModal() { document.getElementById("modal-overlay").classList.add("hidden"); }
 
-// 🚨 ДОДАЄМО: закриття вікна при кліку на темний фон навколо нього
 document.getElementById("modal-overlay").addEventListener("click", function(event) {
-    if (event.target === this) {
-        closeModal();
-    }
+    if (event.target === this) closeModal();
 });
 
 function kickPassenger(rideId, passId, passName, bookingRowIdx) {
     if (!confirm(`Точно відмовити пасажиру ${passName} у поїздці?\nЙому буде надіслано ввічливе сповіщення від бота, а місце повернеться вам.`)) return;
-
     document.getElementById("passengers-list").innerHTML = "⏳ Видаляємо...";
     fetch(APPS_SCRIPT_URL, {
         method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ 
-            action: "kick_passenger", rideId: rideId, passengerId: passId, 
-            bookingRowIdx: bookingRowIdx, rideRowIdx: activeModalRideRowIdx, rideDetails: activeModalRideDetails 
-        })
+        body: JSON.stringify({ action: "kick_passenger", rideId: rideId, passengerId: passId, bookingRowIdx: bookingRowIdx, rideRowIdx: activeModalRideRowIdx, rideDetails: activeModalRideDetails })
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === "success") {
-            alert("✅ Пасажиру відмовлено, місце повернуто у вашу поїздку!");
-            closeModal();
-            loadRides(true);
-        } else alert("❌ Помилка: " + data.message);
+    .then(res => res.json()).then(data => {
+        if (data.status === "success") { alert("✅ Пасажиру відмовлено, місце повернуто!"); closeModal(); loadRides(true); } 
+        else alert("❌ Помилка: " + data.message);
     });
 }
 

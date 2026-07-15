@@ -9,11 +9,13 @@
 </head>
 <body>
 
+<!-- Вкладки зверху -->
 <div class="tabs">
     <div class="tab-btn active" onclick="switchTab('search')">🔍 Знайти поїздку</div>
     <div class="tab-btn" onclick="switchTab('create')">➕ Запропонувати</div>
 </div>
 
+<!-- ВКЛАДКА 1: ПОШУК ТА ФІЛЬТРИ -->
 <div id="tab-search" class="content">
     <div class="filters-box">
         <input type="text" id="filter-query" placeholder="🔍 Куди чи звідки? (напр. Полтава)" oninput="applyFilters()">
@@ -25,6 +27,7 @@
     <div id="rides-list"></div>
 </div>
 
+<!-- ВКЛАДКА 2: СТВОРЕННЯ ПОЇЗДКИ -->
 <div id="tab-create" class="content hidden">
     <h3>Запропонувати поїздку</h3>
     <label>Звідки:</label>
@@ -44,7 +47,7 @@
     <button class="btn" id="btn-submit" onclick="submitRide()">🚀 Опублікувати поїздку</button>
 </div>
 
-<!-- 🚨 МОДАЛЬНЕ ВІКНО ДЛЯ СПИСКУ ПАСАЖИРІВ -->
+<!-- МОДАЛЬНЕ ВІКНО ДЛЯ СПИСКУ ПАСАЖИРІВ -->
 <div id="modal-overlay" class="modal-overlay hidden">
     <div class="modal-box">
         <div class="modal-header">
