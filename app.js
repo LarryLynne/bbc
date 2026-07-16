@@ -10,18 +10,24 @@ document.getElementById('date').valueAsDate = new Date();
 
 let allRides = [];
 
+// 🚨 ТЕПЕР ПЕРЕМИКАЄМО 3 ВКЛАДКИ
 function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById('tab-search').classList.add('hidden');
     document.getElementById('tab-create').classList.add('hidden');
+    document.getElementById('tab-subs').classList.add('hidden');
     
     if (tab === 'search') {
         document.querySelectorAll('.tab-btn')[0].classList.add('active');
         document.getElementById('tab-search').classList.remove('hidden');
         loadRides(false);
-    } else {
+    } else if (tab === 'create') {
         document.querySelectorAll('.tab-btn')[1].classList.add('active');
         document.getElementById('tab-create').classList.remove('hidden');
+    } else if (tab === 'subs') {
+        document.querySelectorAll('.tab-btn')[2].classList.add('active');
+        document.getElementById('tab-subs').classList.remove('hidden');
+        loadSubs(); // Завантажуємо підписки
     }
 }
 
@@ -100,7 +106,68 @@ function renderRides(rides) {
     }
 }
 
-// --- ЛОГІКА МОДАЛЬНОГО ВІКНА ---
+// --- 🚨 ЛОГІКА ПІДПИСОК ---
+function loadSubs() {
+    const list = document.getElementById("subs-list");
+    list.innerHTML = "<p style='text-align:center;'>🔄 Завантаження підписок...</p>";
+    
+    fetch(APPS_SCRIPT_URL, {
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "get_subscriptions", userId: user.id })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status !== "success") { list.innerHTML = "❌ Помилка завантаження."; return; }
+        if (data.subs.length === 0) {
+            list.innerHTML = "<p style='text-align:center; color:#888;'>У вас поки немає активних підписок.</p>";
+            return;
+        }
+        list.innerHTML = "";
+        data.subs.forEach(s => {
+            const item = document.createElement("div");
+            item.className = "sub-card";
+            item.innerHTML = `
+                <div class="sub-info">
+                    <div class="sub-route">🚗 ${s.from} ➔ ${s.to}</div>
+                    📅 <b>${s.dateDisplay}</b>
+                </div>
+                <button class="btn-small btn-kick" onclick="deleteSub(${s.rowIdx})">🗑️ Видалити</button>
+            `;
+            list.appendChild(item);
+        });
+    });
+}
+
+function submitSub() {
+    const from = document.getElementById("sub-from").value.trim();
+    const to = document.getElementById("sub-to").value.trim();
+    const date = document.getElementById("sub-date").value;
+    
+    if (!from || !to) return alert("Будь ласка, вкажіть звідки і куди ви хочете їхати!");
+    
+    fetch(APPS_SCRIPT_URL, {
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "add_subscription", user: { id: user.id, name: user.first_name, username: user.username }, from, to, date })
+    })
+    .then(res => res.json()).then(data => {
+        if (data.status === "success") {
+            alert("🔔 Підписку створено! Ми повідомимо вас у Telegram, коли з'явиться поїздка.");
+            document.getElementById("sub-date").value = "";
+            loadSubs();
+        } else alert("Помилка: " + data.message);
+    });
+}
+
+function deleteSub(rowIdx) {
+    if (!confirm("Видалити цю підписку?")) return;
+    fetch(APPS_SCRIPT_URL, {
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "delete_subscription", rowIdx: rowIdx })
+    })
+    .then(res => res.json()).then(data => { if (data.status === "success") loadSubs(); });
+}
+
+// --- МОДАЛЬНЕ ВІКНО ТА ІНШІ ФУНКЦІЇ ---
 let activeModalRideRowIdx = 0;
 let activeModalRideDetails = "";
 
@@ -157,7 +224,6 @@ function kickPassenger(rideId, passId, passName, bookingRowIdx) {
     });
 }
 
-// --- ІНШІ ФУНКЦІЇ ---
 function submitRide() {
     const from = document.getElementById("from").value, to = document.getElementById("to").value;
     const date = document.getElementById("date").value, time = document.getElementById("time").value;

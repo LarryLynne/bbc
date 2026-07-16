@@ -105,3 +105,18 @@ label { font-size: 14px; font-weight: bold; }
 }
 .btn-chat { background: #e6f2ff; color: #0066cc; }
 .btn-kick { background: #ffe6e6; color: #dc3545; }
+
+/* 🚨 СТИЛІ ДЛЯ ПІДПИСОК */
+.sub-form-box {
+    background: var(--tg-theme-secondary-bg-color, #fff);
+    padding: 15px; border-radius: 12px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e0e0e0;
+}
+.sub-card {
+    background: var(--tg-theme-secondary-bg-color, #fff);
+    border-radius: 10px; padding: 12px 15px; margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #ddd;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.sub-info { font-size: 14px; line-height: 1.4; }
+.sub-route { font-weight: bold; color: var(--tg-theme-button-color, #3390ec); font-size: 16px; }
