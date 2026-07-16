@@ -288,7 +288,20 @@ function submitRide() {
     const date = document.getElementById("date").value, time = document.getElementById("time").value;
     const seats = document.getElementById("seats").value, price = document.getElementById("price").value;
     if (!from || !to || !date || !time) return alert("Будь ласка, заповніть усі поля!");
+    
+    // 🚨 РОЗУМНА ПЕРЕВІРКА ЧАСУ:
+    const now = new Date();
+    const selectedDateTime = new Date(`${date}T${time}:00`);
+    
+    if (selectedDateTime < now) {
+        alert("❌ Помилка: Поїздки в минулому неможливі!");
+        return;
+    }
+    
     const btn = document.getElementById("btn-submit");
+
+
+
     btn.innerText = "⏳ Публікуємо..."; btn.disabled = true;
     fetch(APPS_SCRIPT_URL, {
         method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
