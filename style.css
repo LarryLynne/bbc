@@ -1,108 +1,319 @@
+/* ==========================================================================
+   1. БАЗОВІ НАЛАШТУВАННЯ ТА СУВОРА ГЕОМЕТРІЯ
+   ========================================================================== */
+*, *::before, *::after {
+    box-sizing: border-box; /* Забороняємо відступам ламати ширину елементів */
+}
+
 body {
     font-family: Arial, sans-serif;
-    margin: 0; padding: 0;
+    margin: 0; 
+    padding: 0;
     background-color: var(--tg-theme-bg-color, #f5f5f5);
     color: var(--tg-theme-text-color, #222);
 }
+
+.content { 
+    padding: 15px; 
+    max-width: 500px; 
+    margin: 0 auto; 
+}
+
+.hidden { 
+    display: none !important; 
+}
+
+/* ==========================================================================
+   2. ВЕРХНІ ВКЛАДКИ (НАВІГАЦІЯ)
+   ========================================================================== */
 .tabs {
     display: flex;
     background-color: var(--tg-theme-secondary-bg-color, #fff);
     border-bottom: 1px solid #ddd;
-    position: sticky; top: 0; z-index: 100;
+    position: sticky; 
+    top: 0; 
+    z-index: 100;
 }
+
 .tab-btn {
-    flex: 1; padding: 14px 2px; text-align: center;
-    font-weight: bold; cursor: pointer;
-    border-bottom: 3px solid transparent; font-size: 13px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    display: flex; align-items: center; justify-content: center;
+    flex: 1; 
+    padding: 14px 2px; 
+    text-align: center;
+    font-weight: bold; 
+    cursor: pointer;
+    border-bottom: 3px solid transparent; 
+    font-size: 13px;
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
 }
+
 .tab-btn.active {
     border-bottom-color: var(--tg-theme-button-color, #3390ec);
     color: var(--tg-theme-button-color, #3390ec);
 }
-.content { padding: 15px; max-width: 500px; margin: 0 auto; }
-.hidden { display: none !important; }
 
-/* Панель фільтрів */
+/* ==========================================================================
+   3. ПАНЕЛЬ ФІЛЬТРІВ ТА ПОШУКУ
+   ========================================================================== */
 .filters-box {
     background: var(--tg-theme-secondary-bg-color, #fff);
-    padding: 12px; border-radius: 12px; margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e0e0e0;
-}
-.filters-box input { margin: 4px 0; }
-.filter-row { display: flex; gap: 8px; align-items: center; }
-.btn-reset {
-    padding: 10px 12px; border: none; border-radius: 8px;
-    background: #e0e0e0; color: #333; font-weight: bold; cursor: pointer; height: 42px; margin-top: 4px;
+    padding: 12px; 
+    border-radius: 12px; 
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+    border: 1px solid #e0e0e0;
 }
 
-/* Карточки */
+.filters-box input[type="text"], 
+.filters-box input[type="date"], 
+.btn-reset {
+    height: 44px; /* Жорстко фіксуємо однакову висоту для iOS та Android */
+    font-size: 15px;
+    border-radius: 8px;
+    margin: 0;
+    border: 1px solid #ccc;
+    background: var(--tg-theme-bg-color, #fff);
+    color: var(--tg-theme-text-color, #000);
+}
+
+.filter-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch; /* Змушуємо кнопку і дату бути ідеально однієї висоти */
+    margin-top: 8px;
+}
+
+.filter-row input[type="date"] {
+    flex: 1; /* Календар займає весь вільний простір */
+    padding: 0 10px;
+    appearance: none;
+    -webkit-appearance: none; /* Вимикаємо системні криві відступи Apple */
+}
+
+.btn-reset {
+    width: 100px;
+    background: #e0e0e0; 
+    color: #333; 
+    font-weight: bold; 
+    cursor: pointer; 
+    border: none;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+}
+
+/* ==========================================================================
+   4. КАРТОЧКИ ПОЇЗДОК (МОНОЛІТНА ГЕОМЕТРІЯ БЕЗ СХОДИНОК)
+   ========================================================================== */
 .ride-card {
     background: var(--tg-theme-secondary-bg-color, #fff);
-    border-radius: 12px; padding: 15px; margin-bottom: 12px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #eee;
+    border-radius: 12px; 
+    padding: 15px; 
+    margin-bottom: 12px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+    border: 1px solid #eee;
+    display: flex; 
+    flex-direction: column;
 }
-.ride-route { font-size: 18px; font-weight: bold; color: var(--tg-theme-button-color, #3390ec); }
-.ride-info { font-size: 14px; margin: 8px 0; line-height: 1.4; }
-.ride-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; gap: 8px; }
-.seats-badge { background: #e6f2ff; color: #0066cc; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 13px; }
+
+.ride-route { 
+    font-size: 18px; 
+    font-weight: bold; 
+    color: var(--tg-theme-button-color, #3390ec); 
+}
+
+.ride-info { 
+    font-size: 14px; 
+    margin: 8px 0; 
+    line-height: 1.4; 
+}
+
+/* Статус (бейдж) сидить у своєму окремому поверсі над лінією кнопок */
+.ride-status-box {
+    margin: 4px 0 12px 0;
+}
+
+.seats-badge { 
+    background: #e6f2ff; 
+    color: #0066cc; 
+    padding: 5px 10px; 
+    border-radius: 6px; 
+    font-weight: bold; 
+    font-size: 13px; 
+    display: inline-block;
+}
+
 .badge-my { background: #fff3cd; color: #856404; }
 .badge-booked { background: #d4edda; color: #155724; }
 
-/* Форми */
-input, select {
-    width: 100%; padding: 12px; margin: 6px 0 12px;
-    border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px;
-    background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000);
+/* Сітка для кнопок: кнопки завжди ділять ширину 50/50 або 100% */
+.ride-actions-grid {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(150, 150, 150, 0.2); /* Акуратна роздільна лінія */
 }
-label { font-size: 14px; font-weight: bold; }
-.form-row { display: flex; gap: 10px; }
-.form-row > div { flex: 1; }
-.btn {
-    width: 100%; padding: 14px; border: none; border-radius: 8px;
-    background-color: var(--tg-theme-button-color, #3390ec);
-    color: var(--tg-theme-button-text-color, #fff); font-size: 16px; font-weight: bold; cursor: pointer;
-}
-.btn-action { padding: 8px 12px; font-size: 13px; width: auto; border-radius: 6px; }
-.btn-cancel { background-color: #dc3545 !important; color: #fff !important; }
-.btn-finish { background-color: #6c757d !important; color: #fff !important; }
 
-/* Підписки */
+.ride-actions-grid .btn, 
+.ride-actions-grid .btn-small, 
+.ride-actions-grid a {
+    flex: 1; /* Кнопки розтягуються порівну! */
+    height: 40px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 8px;
+    border: none; 
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   5. ФОРМИ ТА ЗАГАЛЬНІ КНОПКИ
+   ========================================================================== */
+input, select {
+    width: 100%; 
+    padding: 12px; 
+    margin: 6px 0 12px;
+    border: 1px solid #ccc; 
+    border-radius: 8px; 
+    box-sizing: border-box; 
+    font-size: 16px;
+    background: var(--tg-theme-bg-color, #fff); 
+    color: var(--tg-theme-text-color, #000);
+}
+
+label { 
+    font-size: 14px; 
+    font-weight: bold; 
+}
+
+.form-row { 
+    display: flex; 
+    gap: 10px; 
+}
+
+.form-row > div { 
+    flex: 1; 
+}
+
+.btn {
+    width: 100%; 
+    padding: 14px; 
+    border: none; 
+    border-radius: 8px;
+    background-color: var(--tg-theme-button-color, #3390ec);
+    color: var(--tg-theme-button-text-color, #fff); 
+    font-size: 16px; 
+    font-weight: bold; 
+    cursor: pointer;
+}
+
+.btn-action { padding: 8px 12px; font-size: 13px; width: auto; border-radius: 6px; }
+.btn-small { padding: 6px 10px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; }
+
+/* Кольори кнопок */
+.btn-chat { background: #e6f2ff; color: #0066cc; }
+.btn-call { background: #28a745; color: #fff; }
+.btn-book { background: var(--tg-theme-button-color, #3390ec); color: #fff; }
+.btn-finish { background-color: #6c757d !important; color: #fff !important; }
+.btn-cancel { background-color: #dc3545 !important; color: #fff !important; }
+.btn-kick { background: #ffe6e6; color: #dc3545; }
+
+/* ==========================================================================
+   6. ПІДПИСКИ
+   ========================================================================== */
 .sub-form-box {
     background: var(--tg-theme-secondary-bg-color, #fff);
-    padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e0e0e0;
+    padding: 15px; 
+    border-radius: 12px; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+    border: 1px solid #e0e0e0;
 }
+
 .sub-card {
     background: var(--tg-theme-secondary-bg-color, #fff);
-    border-radius: 10px; padding: 12px 15px; margin-bottom: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #ddd;
-    display: flex; justify-content: space-between; align-items: center;
+    border-radius: 10px; 
+    padding: 12px 15px; 
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+    border: 1px solid #ddd;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
 }
+
 .sub-info { font-size: 14px; line-height: 1.4; }
 .sub-route { font-weight: bold; color: var(--tg-theme-button-color, #3390ec); font-size: 16px; }
 
-/* Модальні вікна */
+/* ==========================================================================
+   7. МОДАЛЬНІ ВІКНА (ПАСАЖИРИ ТА ВИБІР МІСЦЬ)
+   ========================================================================== */
 .modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.6); z-index: 1000;
-    display: flex; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box;
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6); 
+    z-index: 1000;
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    padding: 15px; 
+    box-sizing: border-box;
 }
+
 .modal-box {
-    background: var(--tg-theme-bg-color, #fff); width: 100%; max-width: 400px;
-    border-radius: 14px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    display: flex; flex-direction: column; max-height: 80vh;
+    background: var(--tg-theme-bg-color, #fff); 
+    width: 100%; 
+    max-width: 400px;
+    border-radius: 14px; 
+    overflow: hidden; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    display: flex; 
+    flex-direction: column; 
+    max-height: 80vh;
 }
+
 .modal-header {
-    padding: 15px; background: var(--tg-theme-secondary-bg-color, #f0f0f0);
-    display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd;
+    padding: 15px; 
+    background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    border-bottom: 1px solid #ddd;
 }
+
 .modal-header h4 { margin: 0; font-size: 16px; }
-.btn-close-modal { background: none; border: none; font-size: 20px; font-weight: bold; cursor: pointer; color: #888; }
+
+.btn-close-modal { 
+    background: none; 
+    border: none; 
+    font-size: 20px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    color: #888; 
+}
+
 .modal-body { padding: 15px; overflow-y: auto; }
-.passenger-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+
+.passenger-item { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 10px 0; 
+    border-bottom: 1px solid #eee; 
+}
+
 .passenger-info { font-weight: bold; font-size: 15px; }
 .passenger-actions { display: flex; gap: 8px; }
-.btn-small { padding: 6px 10px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; }
-.btn-chat { background: #e6f2ff; color: #0066cc; }
-.btn-kick { background: #ffe6e6; color: #dc3545; }

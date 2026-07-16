@@ -102,6 +102,7 @@ function renderMyRides() {
 }
 
 // --- 🚨 РОЗУМНА ГЕНЕРАЦІЯ КАРТОЧКИ ПОЇЗДКИ ---
+// --- 🚨 ІДЕАЛЬНА ГЕОМЕТРІЯ КАРТОЧКИ ПОЇЗДКИ ---
 function createRideCardElement(ride, isMyTab) {
     let statusBadge = "";
     if (isMyTab) {
@@ -113,25 +114,44 @@ function createRideCardElement(ride, isMyTab) {
         if (ride.isBookedByMe) statusBadge = `<span class="seats-badge badge-booked">✅ Заброньовано вами</span>`;
     }
 
-    let phoneBtn = ride.phone && !ride.isMyRide ? `<a href="tel:${ride.phone}" class="btn-small" style="background:#28a745; color:#fff; text-decoration:none; padding:8px 12px; border-radius:6px;">📞 Дзвінок</a>` : "";
-
     let actionBtns = "";
+    
+    // 1. ЯКЩО ЦЕ ПОЇЗДКА ВОДІЯ:
     if (ride.isMyRide) {
-        let passBtn = `<button class="btn-small btn-chat" style="padding:8px 12px;" onclick="openPassengersModal('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">👥 Пасажири (${ride.bookedCount})</button>`;
-        let finishBtn = ride.status === "Active" ? `<button class="btn btn-action btn-finish" onclick="finishRide('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to}')">🏁 Завершити</button>` : "";
-        let cancelBtn = ride.status === "Active" ? `<button class="btn btn-action btn-cancel" onclick="cancelRide('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to}')">❌ Скасувати</button>` : "";
-        actionBtns = `<div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">${passBtn}${finishBtn}${cancelBtn}</div>`;
-    } else if (ride.isBookedByMe) {
-        let cancelBookBtn = ride.status === "Active" ? `<button class="btn btn-action btn-cancel" onclick="cancelBooking('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to}')">❌ Скасувати бронь</button>` : "";
-        actionBtns = `<div style="display:flex; gap:6px; align-items:center;">${phoneBtn}${cancelBookBtn}</div>`;
-    } else if (ride.status === "Active" && ride.seats > 0) {
-        let bookBtn = `<button class="btn btn-action" onclick="openBookModal('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})', ${ride.seats})">Забронювати</button>`;
-        actionBtns = `<div style="display:flex; gap:6px; align-items:center;">${phoneBtn}${bookBtn}</div>`;
+        let passBtn = `<button class="btn-small btn-chat" onclick="openPassengersModal('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">👥 Пасажири (${ride.bookedCount})</button>`;
+        let finishBtn = ride.status === "Active" ? `<button class="btn-small btn-finish" onclick="finishRide('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to}')">🏁 Завершити</button>` : "";
+        let cancelBtn = ride.status === "Active" ? `<button class="btn-small btn-cancel" onclick="cancelRide('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to}')">❌ Скасувати</button>` : "";
+        
+        if (ride.status === "Active") {
+            // Пасажири на 100% ширини зверху, а Завершити/Скасувати строго 50/50 знизу!
+            actionBtns = `
+                <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+                    <div class="ride-actions-grid" style="border-top:none; padding-top:0;">${passBtn}</div>
+                    <div class="ride-actions-grid" style="border-top:none; padding-top:0;">${finishBtn}${cancelBtn}</div>
+                </div>`;
+        } else {
+            actionBtns = `<div class="ride-actions-grid" style="border-top:none; padding-top:0;">${passBtn}</div>`;
+        }
+    } 
+    // 2. ЯКЩО ЦЕ ЧУЖА ПОЇЗДКА, ЯКУ Я ЗАБРОНЮВАВ:
+    else if (ride.isBookedByMe) {
+        let phoneBtn = ride.phone ? `<a href="tel:${ride.phone}" class="btn-small btn-call">📞 Дзвінок</a>` : "";
+        let cancelBookBtn = ride.status === "Active" ? `<button class="btn-small btn-cancel" onclick="cancelBooking('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to}')">❌ Скасувати бронь</button>` : "";
+        actionBtns = `<div class="ride-actions-grid">${phoneBtn}${cancelBookBtn}</div>`;
+    } 
+    // 3. ЯКЩО ЦЕ ВІЛЬНА ПОЇЗДКА ДЛЯ БРОНЮВАННЯ:
+    else if (ride.status === "Active" && ride.seats > 0) {
+        let phoneBtn = ride.phone ? `<a href="tel:${ride.phone}" class="btn-small btn-call">📞 Дзвінок</a>` : "";
+        let bookBtn = `<button class="btn-small btn-book" onclick="openBookModal('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})', ${ride.seats})">Забронювати</button>`;
+        // Якщо є телефон — кнопки Дзвінок і Забронювати стануть строго по 50%. Якщо ні — Забронювати займе 100%!
+        actionBtns = `<div class="ride-actions-grid">${phoneBtn}${bookBtn}</div>`;
     }
 
     const card = document.createElement("div");
     card.className = "ride-card";
-    if (ride.status !== "Active" && isMyTab) card.style.opacity = "0.7"; // Завершені і скасовані робимо трохи напівпрозорими
+    if (ride.status !== "Active" && isMyTab) card.style.opacity = "0.7";
+    
+    // 🚨 Бейдж статусу сидить у своєму окремому поверсі (.ride-status-box), а кнопки — у своєму!
     card.innerHTML = `
         <div class="ride-route">🚗 ${ride.from} ➔ ${ride.to}</div>
         <div class="ride-info">
@@ -139,7 +159,8 @@ function createRideCardElement(ride, isMyTab) {
             👤 Водій: ${ride.driverName} ${ride.phone ? `(📞 ${ride.phone})` : ""}<br>
             💰 Ціна: ${ride.price}
         </div>
-        <div class="ride-meta">${statusBadge}${actionBtns}</div>
+        <div class="ride-status-box">${statusBadge}</div>
+        ${actionBtns ? actionBtns : ''}
     `;
     return card;
 }
