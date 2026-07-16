@@ -281,7 +281,7 @@ function submitRide() {
     const from = document.getElementById("from").value, to = document.getElementById("to").value;
     const date = document.getElementById("date").value, time = document.getElementById("time").value;
     const seats = document.getElementById("seats").value, price = document.getElementById("price").value;
-    const phone = document.getElementById("phone").value.trim(); // 🚨 Беремо телефон
+    const phone = document.getElementById("phone").value.trim();
     
     if (!from || !to || !date || !time) return alert("Будь ласка, заповніть усі поля!");
     if (new Date(`${date}T${time}:00`) < new Date()) return alert("❌ Помилка: Ви не можете створити поїздку в минулому часі!");
@@ -294,7 +294,11 @@ function submitRide() {
     })
     .then(res => res.json()).then(data => {
         btn.innerText = "🚀 Опублікувати поїздку"; btn.disabled = false;
-        if (data.status === "success") { alert("✅ Поїздку успішно створено!"); switchTab('search'); } else alert("Помилка: " + data.message);
+        if (data.status === "success") { 
+            alert("✅ Поїздку успішно створено!"); 
+            switchTab('search');
+            loadRides(false); // 🚨 ДОБАВИЛИ ЭТУ СТРОКУ: принудительно запрашиваем свежий список с сервера!
+        } else alert("Помилка: " + data.message);
     });
 }
 
