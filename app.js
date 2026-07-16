@@ -32,9 +32,11 @@ function switchTab(tab) {
 
 function loadRides(isSilent = false) {
     const container = document.getElementById("rides-list");
-    const cachedHTML = localStorage.getItem("rides_cache_" + user.id);
-    if (cachedHTML && !isSilent && allRides.length === 0) container.innerHTML = cachedHTML;
-    else if (!isSilent && !cachedHTML) container.innerHTML = "<p style='text-align:center;'>🔄 Завантаження поїздок...</p>";
+    
+    // 🚨 Без кешу: якщо це не тихе фонове оновлення, завжди показуємо статус завантаження
+    if (!isSilent) {
+        container.innerHTML = "<p style='text-align:center; margin-top:30px; color:#666;'>🔄 Завантаження актуальних поїздок...</p>";
+    }
 
     fetch(APPS_SCRIPT_URL, {
         method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -43,9 +45,12 @@ function loadRides(isSilent = false) {
     .then(res => res.json())
     .then(data => {
         if (data.status !== "success") return;
-        allRides = data.rides; applyFilters();
+        allRides = data.rides; 
+        applyFilters();
     })
-    .catch(err => { if (!cachedHTML) container.innerHTML = "❌ Помилка зв'язку з сервером."; });
+    .catch(err => { 
+        container.innerHTML = "<p style='text-align:center; margin-top:30px; color:#dc3545;'>❌ Помилка зв'язку з сервером.<br>Спробуйте оновити сторінку.</p>"; 
+    });
 }
 
 function applyFilters() {
@@ -102,7 +107,11 @@ function renderRides(rides) {
     });
 
     if (!document.getElementById("filter-query").value && !document.getElementById("filter-date").value) {
-        localStorage.setItem("rides_cache_" + user.id, container.innerHTML);
+        // 🚨 Зберігаємо HTML разом із міткою точного часу:
+        localStorage.setItem("rides_cache_" + user.id, JSON.stringify({
+            html: container.innerHTML,
+            time: Date.now()
+        }));
     }
 }
 
