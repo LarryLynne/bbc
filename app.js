@@ -10,7 +10,6 @@ document.getElementById('date').valueAsDate = new Date();
 
 let allRides = [];
 
-// 🚨 ТЕПЕР ПЕРЕМИКАЄМО 3 ВКЛАДКИ
 function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById('tab-search').classList.add('hidden');
@@ -27,7 +26,7 @@ function switchTab(tab) {
     } else if (tab === 'subs') {
         document.querySelectorAll('.tab-btn')[2].classList.add('active');
         document.getElementById('tab-subs').classList.remove('hidden');
-        loadSubs(); // Завантажуємо підписки
+        loadSubs();
     }
 }
 
@@ -77,7 +76,8 @@ function renderRides(rides) {
 
     rides.forEach(ride => {
         let badgeHtml = `<span class="seats-badge">Вільних місць: ${ride.seats}</span>`;
-        let actionBtnHtml = `<button class="btn btn-action" onclick="bookRide('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">Забронювати</button>`;
+        // 🚨 Натискання кнопки відкриває модальне вікно вибору кількості місць
+        let actionBtnHtml = `<button class="btn btn-action" onclick="openBookModal('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})', ${ride.seats})">Забронювати</button>`;
 
         if (ride.isMyRide) {
             badgeHtml = `<button class="btn-small btn-chat" onclick="openPassengersModal('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">👥 Пасажири (${ride.bookedCount})</button>`;
@@ -106,7 +106,65 @@ function renderRides(rides) {
     }
 }
 
-// --- 🚨 ЛОГІКА ПІДПИСОК ---
+// --- 🚨 ЛОГІКА ВІКНА ВИБОРУ КІЛЬКОСТІ МІСЦЬ ---
+let pendingBookRideId = "";
+let pendingBookRowIdx = 0;
+let pendingBookDriverId = "";
+let pendingBookDetails = "";
+
+function openBookModal(rideId, rowIdx, driverId, rideDetails, maxSeats) {
+    pendingBookRideId = rideId;
+    pendingBookRowIdx = rowIdx;
+    pendingBookDriverId = driverId;
+    pendingBookDetails = rideDetails;
+    
+    document.getElementById("book-modal-details").innerText = `Маршрут: ${rideDetails}\nВільних місць у салоні: ${maxSeats}`;
+    
+    const select = document.getElementById("book-seats-select");
+    select.innerHTML = "";
+    for (let i = 1; i <= maxSeats; i++) {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.innerText = i === 1 ? "1 місце" : `${i} місця/місць`;
+        select.appendChild(opt);
+    }
+    
+    document.getElementById("book-modal-overlay").classList.remove("hidden");
+}
+
+function closeBookModal() {
+    document.getElementById("book-modal-overlay").classList.add("hidden");
+}
+
+document.getElementById("book-modal-overlay").addEventListener("click", function(event) {
+    if (event.target === this) closeBookModal();
+});
+
+function confirmBooking() {
+    const seatsToBook = parseInt(document.getElementById("book-seats-select").value, 10) || 1;
+    closeBookModal();
+    
+    fetch(APPS_SCRIPT_URL, {
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ 
+            action: "book_ride", 
+            rideId: pendingBookRideId, 
+            rowIdx: pendingBookRowIdx, 
+            driverId: pendingBookDriverId, 
+            rideDetails: pendingBookDetails,
+            seatsToBook: seatsToBook,
+            passenger: { id: user.id, name: user.first_name, username: user.username } 
+        })
+    })
+    .then(res => res.json()).then(data => { 
+        if (data.status === "success") { 
+            alert(`🎉 Успішно заброньовано місць: ${seatsToBook}!\nВодію надіслано ТГ-сповіщення.`); 
+            loadRides(true); 
+        } else alert("❌ Помилка: " + data.message); 
+    });
+}
+
+// --- ЛОГІКА ПІДПИСОК ---
 function loadSubs() {
     const list = document.getElementById("subs-list");
     list.innerHTML = "<p style='text-align:center;'>🔄 Завантаження підписок...</p>";
@@ -167,7 +225,7 @@ function deleteSub(rowIdx) {
     .then(res => res.json()).then(data => { if (data.status === "success") loadSubs(); });
 }
 
-// --- МОДАЛЬНЕ ВІКНО ТА ІНШІ ФУНКЦІЇ ---
+// --- МОДАЛЬНЕ ВІКНО ПАСАЖИРІВ ТА ІНШІ ФУНКЦІЇ ---
 let activeModalRideRowIdx = 0;
 let activeModalRideDetails = "";
 
@@ -193,8 +251,9 @@ function openPassengersModal(rideId, rowIdx, rideDetails) {
             const chatUrl = p.username ? `https://t.me/${p.username}` : `tg://user?id=${p.id}`;
             const item = document.createElement("div");
             item.className = "passenger-item";
+            // 🚨 Відображаємо кількість заброньованих місць для кожного пасажира
             item.innerHTML = `
-                <div class="passenger-info">👤 ${p.name}</div>
+                <div class="passenger-info">👤 ${p.name} <span style="color:#0066cc; font-size:13px;">(${p.seats} місц.)</span></div>
                 <div class="passenger-actions">
                     <a href="${chatUrl}" target="_blank" class="btn-small btn-chat">💬 Чат</a>
                     <button class="btn-small btn-kick" onclick="kickPassenger('${rideId}', '${p.id}', '${p.name}', ${p.bookingRowIdx})">🚫 Відмовити</button>
@@ -212,14 +271,14 @@ document.getElementById("modal-overlay").addEventListener("click", function(even
 });
 
 function kickPassenger(rideId, passId, passName, bookingRowIdx) {
-    if (!confirm(`Точно відмовити пасажиру ${passName} у поїздці?\nЙому буде надіслано ввічливе сповіщення від бота, а місце повернеться вам.`)) return;
+    if (!confirm(`Точно відмовити пасажиру ${passName} у поїздці?\nЙому буде надіслано ввічливе сповіщення від бота, а всі заброньовані ним місця повернуться вам.`)) return;
     document.getElementById("passengers-list").innerHTML = "⏳ Видаляємо...";
     fetch(APPS_SCRIPT_URL, {
         method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "kick_passenger", rideId: rideId, passengerId: passId, bookingRowIdx: bookingRowIdx, rideRowIdx: activeModalRideRowIdx, rideDetails: activeModalRideDetails })
     })
     .then(res => res.json()).then(data => {
-        if (data.status === "success") { alert("✅ Пасажиру відмовлено, місце повернуто!"); closeModal(); loadRides(true); } 
+        if (data.status === "success") { alert("✅ Пасажиру відмовлено, місця повернуто у вашу поїздку!"); closeModal(); loadRides(true); } 
         else alert("❌ Помилка: " + data.message);
     });
 }
@@ -242,12 +301,7 @@ function submitRide() {
 }
 
 function bookRide(rideId, rowIdx, driverId, rideDetails) {
-    if (!confirm(`Бронюємо 1 місце на поїздку:\n${rideDetails}?`)) return;
-    fetch(APPS_SCRIPT_URL, {
-        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "book_ride", rideId, rowIdx, driverId, rideDetails, passenger: { id: user.id, name: user.first_name, username: user.username } })
-    })
-    .then(res => res.json()).then(data => { if (data.status === "success") { alert("🎉 Місце заброньовано!\nВодію надіслано ТГ-сповіщення."); loadRides(true); } else alert("❌ Помилка: " + data.message); });
+    // Ця функція більше не використовується безпосередньо, замість неї викликається openBookModal
 }
 
 function cancelRide(rideId, rowIdx, rideDetails) {
