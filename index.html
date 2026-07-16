@@ -5,17 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Поїздки нашого села</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=3.3">
+    <link rel="stylesheet" href="style.css?v=7.0">
 </head>
 <body>
 
+<!-- 🚨 4 Вкладки зверху -->
 <div class="tabs">
     <div class="tab-btn active" onclick="switchTab('search')">Знайти</div>
     <div class="tab-btn" onclick="switchTab('create')">Створити</div>
-    <div class="tab-btn" onclick="switchTab('subs')">Підписки</div>
+    <div class="tab-btn" onclick="switchTab('subs')">Підписка</div>
+    <div class="tab-btn" onclick="switchTab('my')">Мої</div>
 </div>
 
-<!-- ВКЛАДКА 1: ПОШУК ТА ФІЛЬТРИ -->
+<!-- ВКЛАДКА 1: ПОШУК (Тільки активні поїздки) -->
 <div id="tab-search" class="content">
     <div class="filters-box">
         <input type="text" id="filter-query" placeholder="🔍 Куди чи звідки? (напр. Полтава)" oninput="applyFilters()">
@@ -44,6 +46,11 @@
         <div><label>Вільних місць:</label><input type="number" id="seats" value="3" min="1" max="8"></div>
         <div><label>Ціна або коментар:</label><input type="text" id="price" value="100 грн" placeholder="Безкоштовно / 100 грн"></div>
     </div>
+    
+    <!-- 🚨 Поле для телефону -->
+    <label>Телефон (необов'язково, для зв'язку):</label>
+    <input type="tel" id="phone" placeholder="099 123 45 67">
+    
     <button class="btn" id="btn-submit" onclick="submitRide()">🚀 Опублікувати поїздку</button>
 </div>
 
@@ -52,22 +59,25 @@
     <div class="sub-form-box">
         <h4 style="margin-top:0; margin-bottom:8px;">🔔 Чекаєте на поїздку?</h4>
         <p style="font-size:13px; color:#555; margin-bottom:12px;">Створіть підписку, і бот надішле вам сповіщення в Telegram, щойно водій опублікує відповідний маршрут!</p>
-        
         <label>Звідки:</label>
         <input type="text" id="sub-from" value="Покровське" placeholder="Наприклад: Покровське">
         <label>Куди:</label>
         <input type="text" id="sub-to" value="Полтава" placeholder="Наприклад: Полтава">
-        <label>Дата (необов'язково, можна залишити порожнім для будь-якої дати):</label>
+        <label>Дата (необов'язково):</label>
         <input type="date" id="sub-date">
-        
         <button class="btn" style="background:#28a745;" onclick="submitSub()">🔔 Підписатися на сповіщення</button>
     </div>
-
     <h4 style="margin-top:20px;">Мої активні підписки:</h4>
     <div id="subs-list"></div>
 </div>
 
-<!-- 🚨 МОДАЛЬНЕ ВІКНО ДЛЯ ВИБОРУ КІЛЬКОСТІ МІСЦЬ -->
+<!-- 🚨 ВКЛАДКА 4: МОЇ ПОЇЗДКИ (Всі статуси) -->
+<div id="tab-my" class="content hidden">
+    <h4 style="margin-top:0; margin-bottom:12px;">👤 Мої поїздки та бронювання</h4>
+    <div id="my-rides-list"></div>
+</div>
+
+<!-- МОДАЛЬНЕ ВІКНО ДЛЯ ВИБОРУ КІЛЬКОСТІ МІСЦЬ -->
 <div id="book-modal-overlay" class="modal-overlay hidden">
     <div class="modal-box" style="max-width: 320px;">
         <div class="modal-header">
@@ -96,6 +106,6 @@
     </div>
 </div>
 
-<script src="app.js?v=3.1"></script>
+<script src="app.js?v=7.0"></script>
 </body>
 </html>
