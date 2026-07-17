@@ -22,7 +22,7 @@ function switchTab(tab) {
     if (tab === 'search') {
         document.querySelectorAll('.tab-btn')[0].classList.add('active');
         document.getElementById('tab-search').classList.remove('hidden');
-        applyFilters();
+        loadRides(false);
     } else if (tab === 'create') {
         document.querySelectorAll('.tab-btn')[1].classList.add('active');
         document.getElementById('tab-create').classList.remove('hidden');
@@ -33,8 +33,25 @@ function switchTab(tab) {
     } else if (tab === 'my') {
         document.querySelectorAll('.tab-btn')[3].classList.add('active');
         document.getElementById('tab-my').classList.remove('hidden');
-        renderMyRides();
+        loadRides(false);
     }
+}
+
+function updateLocationsDatalist(serverLocations = []) {
+    const datalist = document.getElementById("locations-list");
+    if (!datalist) return;
+    const locSet = new Set(serverLocations);
+    allRides.forEach(r => {
+        if (r.from) locSet.add(r.from.trim());
+        if (r.to) locSet.add(r.to.trim());
+    });
+    datalist.innerHTML = "";
+    Array.from(locSet).sort().forEach(loc => {
+        if (!loc) return;
+        const opt = document.createElement("option");
+        opt.value = loc;
+        datalist.appendChild(opt);
+    });
 }
 
 function loadRides(isSilent = false) {
@@ -49,6 +66,7 @@ function loadRides(isSilent = false) {
     .then(data => {
         if (data.status !== "success") return;
         allRides = data.rides; 
+        updateLocationsDatalist(data.locations);
         if (currentTab === 'my') renderMyRides(); else applyFilters();
     })
     .catch(err => { 
@@ -61,7 +79,6 @@ function applyFilters() {
     const query = document.getElementById("filter-query").value.toLowerCase().trim();
     const filterDate = document.getElementById("filter-date").value;
     
-    // 🚨 У ЗАГАЛЬНИЙ ПОШУК БЕРЕМО ТІЛЬКИ АКТИВНІ ПОЇЗДКИ:
     const filtered = allRides.filter(ride => {
         if (ride.status !== "Active") return false;
         const matchText = ride.from.toLowerCase().includes(query) || ride.to.toLowerCase().includes(query);
@@ -77,7 +94,6 @@ function resetFilters() {
     applyFilters();
 }
 
-// --- 🚨 МАЛЮВАННЯ В ЗАГАЛЬНОМУ ПОШУКУ ---
 function renderSearchRides(rides) {
     const container = document.getElementById("rides-list");
     container.innerHTML = "";
@@ -88,12 +104,10 @@ function renderSearchRides(rides) {
     rides.forEach(ride => container.appendChild(createRideCardElement(ride, false)));
 }
 
-// --- 🚨 МАЛЮВАННЯ У ВКЛАДЦІ "МОЇ" (ВСІ СТАТУСИ) ---
 function renderMyRides() {
     const container = document.getElementById("my-rides-list");
     container.innerHTML = "";
     const myRides = allRides.filter(ride => ride.isMyRide || ride.isBookedByMe);
-    
     if (myRides.length === 0) {
         container.innerHTML = "<p style='text-align:center; color:#888; margin-top:30px;'>У вас поки немає створених або заброньованих поїздок.</p>";
         return;
@@ -101,8 +115,6 @@ function renderMyRides() {
     myRides.forEach(ride => container.appendChild(createRideCardElement(ride, true)));
 }
 
-// --- 🚨 РОЗУМНА ГЕНЕРАЦІЯ КАРТОЧКИ ПОЇЗДКИ ---
-// --- 🚨 ІДЕАЛЬНА ГЕОМЕТРІЯ КАРТОЧКИ ПОЇЗДКИ ---
 function createRideCardElement(ride, isMyTab) {
     let statusBadge = "";
     if (isMyTab) {
@@ -115,15 +127,11 @@ function createRideCardElement(ride, isMyTab) {
     }
 
     let actionBtns = "";
-    
-    // 1. ЯКЩО ЦЕ ПОЇЗДКА ВОДІЯ:
     if (ride.isMyRide) {
         let passBtn = `<button class="btn-small btn-chat" onclick="openPassengersModal('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})')">👥 Пасажири (${ride.bookedCount})</button>`;
         let finishBtn = ride.status === "Active" ? `<button class="btn-small btn-finish" onclick="finishRide('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to}')">🏁 Завершити</button>` : "";
         let cancelBtn = ride.status === "Active" ? `<button class="btn-small btn-cancel" onclick="cancelRide('${ride.id}', ${ride.rowIdx}, '${ride.from}➔${ride.to}')">❌ Скасувати</button>` : "";
-        
         if (ride.status === "Active") {
-            // Пасажири на 100% ширини зверху, а Завершити/Скасувати строго 50/50 знизу!
             actionBtns = `
                 <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
                     <div class="ride-actions-grid" style="border-top:none; padding-top:0;">${passBtn}</div>
@@ -132,32 +140,36 @@ function createRideCardElement(ride, isMyTab) {
         } else {
             actionBtns = `<div class="ride-actions-grid" style="border-top:none; padding-top:0;">${passBtn}</div>`;
         }
-    } 
-    // 2. ЯКЩО ЦЕ ЧУЖА ПОЇЗДКА, ЯКУ Я ЗАБРОНЮВАВ:
-    else if (ride.isBookedByMe) {
+    } else if (ride.isBookedByMe) {
         let phoneBtn = ride.phone ? `<a href="tel:${ride.phone}" class="btn-small btn-call">📞 Дзвінок</a>` : "";
         let cancelBookBtn = ride.status === "Active" ? `<button class="btn-small btn-cancel" onclick="cancelBooking('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to}')">❌ Скасувати бронь</button>` : "";
         actionBtns = `<div class="ride-actions-grid">${phoneBtn}${cancelBookBtn}</div>`;
-    } 
-    // 3. ЯКЩО ЦЕ ВІЛЬНА ПОЇЗДКА ДЛЯ БРОНЮВАННЯ:
-    else if (ride.status === "Active" && ride.seats > 0) {
+    } else if (ride.status === "Active" && ride.seats > 0) {
         let phoneBtn = ride.phone ? `<a href="tel:${ride.phone}" class="btn-small btn-call">📞 Дзвінок</a>` : "";
         let bookBtn = `<button class="btn-small btn-book" onclick="openBookModal('${ride.id}', ${ride.rowIdx}, '${ride.driverId}', '${ride.from}➔${ride.to} (${ride.dateTimeDisplay})', ${ride.seats})">Забронювати</button>`;
-        // Якщо є телефон — кнопки Дзвінок і Забронювати стануть строго по 50%. Якщо ні — Забронювати займе 100%!
         actionBtns = `<div class="ride-actions-grid">${phoneBtn}${bookBtn}</div>`;
     }
 
     const card = document.createElement("div");
     card.className = "ride-card";
     if (ride.status !== "Active" && isMyTab) card.style.opacity = "0.7";
-    
-    // 🚨 Бейдж статусу сидить у своєму окремому поверсі (.ride-status-box), а кнопки — у своєму!
+
+    // 🚨 ГЕНЕРУЄМО АВАТАРКУ АБО ЗАГЛУШКУ:
+    let avatarHtml = ride.photoUrl ? 
+        `<img src="${ride.photoUrl}" alt="Avatar" onerror="this.parentElement.innerHTML='👤'">` : 
+        `👤`;
+
     card.innerHTML = `
-        <div class="ride-route">🚗 ${ride.from} ➔ ${ride.to}</div>
-        <div class="ride-info">
-            📅 <b>${ride.dateTimeDisplay}</b><br>
-            👤 Водій: ${ride.driverName} ${ride.phone ? `(📞 ${ride.phone})` : ""}<br>
-            💰 Ціна: ${ride.price}
+        <div class="ride-top-section">
+            <div class="ride-text-content">
+                <div class="ride-route">🚗 ${ride.from} ➔ ${ride.to}</div>
+                <div class="ride-info">
+                    📅 <b>${ride.dateTimeDisplay}</b><br>
+                    👤 Водій: ${ride.driverName} ${ride.phone ? `(📞 ${ride.phone})` : ""}<br>
+                    💰 Ціна: ${ride.price}
+                </div>
+            </div>
+            <div class="driver-avatar-box" title="Водій">${avatarHtml}</div>
         </div>
         <div class="ride-status-box">${statusBadge}</div>
         ${actionBtns ? actionBtns : ''}
@@ -165,7 +177,6 @@ function createRideCardElement(ride, isMyTab) {
     return card;
 }
 
-// --- ЛОГІКА ВІКНА ВИБОРУ КІЛЬКОСТІ МІСЦЬ ---
 let pendingBookRideId = "", pendingBookRowIdx = 0, pendingBookDriverId = "", pendingBookDetails = "";
 
 function openBookModal(rideId, rowIdx, driverId, rideDetails, maxSeats) {
@@ -197,7 +208,6 @@ function confirmBooking() {
     });
 }
 
-// --- ЛОГІКА ПІДПИСОК ---
 function loadSubs() {
     const list = document.getElementById("subs-list");
     list.innerHTML = "<p style='text-align:center;'>🔄 Завантаження підписок...</p>";
@@ -235,7 +245,6 @@ function deleteSub(rowIdx) {
     .then(res => res.json()).then(data => { if (data.status === "success") loadSubs(); });
 }
 
-// --- МОДАЛЬНЕ ВІКНО ПАСАЖИРІВ ТА ІНШІ ФУНКЦІЇ ---
 let activeModalRideRowIdx = 0, activeModalRideDetails = "";
 
 function openPassengersModal(rideId, rowIdx, rideDetails) {
@@ -290,25 +299,25 @@ function submitRide() {
     btn.innerText = "⏳ Публікуємо..."; btn.disabled = true;
     fetch(APPS_SCRIPT_URL, {
         method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "create_ride", user: { id: user.id, name: user.first_name, username: user.username }, from, to, date, time, seats, price, phone })
+        body: JSON.stringify({ 
+            action: "create_ride", 
+            user: { id: user.id, name: user.first_name, username: user.username, photo: user.photo_url || "" }, 
+            from, to, date, time, seats, price, phone 
+        })
     })
     .then(res => res.json()).then(data => {
         btn.innerText = "🚀 Опублікувати поїздку"; btn.disabled = false;
         if (data.status === "success") { 
             alert("✅ Поїздку успішно створено!"); 
-            switchTab('search');
-            loadRides(false); // 🚨 ДОБАВИЛИ ЭТУ СТРОКУ: принудительно запрашиваем свежий список с сервера!
+            switchTab('search'); 
+            loadRides(false); // Примусово оновлюємо список після запису на диск
         } else alert("Помилка: " + data.message);
     });
 }
 
-// --- 🚨 РУЧНЕ ЗАВЕРШЕННЯ ПОЇЗДКИ ВОДІЄМ ---
 function finishRide(rideId, rowIdx, rideDetails) {
     if (!confirm(`Завершити поїздку:\n${rideDetails}?\nВона перейде в статус завершених і зникне з загального пошуку.`)) return;
-    fetch(APPS_SCRIPT_URL, {
-        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "finish_ride", rowIdx: rowIdx })
-    })
+    fetch(APPS_SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "finish_ride", rowIdx: rowIdx }) })
     .then(res => res.json()).then(data => { if (data.status === "success") { alert("🏁 Поїздку завершено!"); loadRides(false); } });
 }
 

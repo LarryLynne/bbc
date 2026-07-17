@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Поїздки нашого села</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=8.0">
+    <link rel="stylesheet" href="style.css?v=10.0">
 </head>
 <body>
 
-<!-- 🚨 4 Вкладки зверху -->
+<!-- 4 Вкладки зверху -->
 <div class="tabs">
     <div class="tab-btn active" onclick="switchTab('search')">Знайти</div>
     <div class="tab-btn" onclick="switchTab('create')">Створити</div>
@@ -17,10 +17,10 @@
     <div class="tab-btn" onclick="switchTab('my')">Мої</div>
 </div>
 
-<!-- ВКЛАДКА 1: ПОШУК (Тільки активні поїздки) -->
+<!-- ВКЛАДКА 1: ПОШУК -->
 <div id="tab-search" class="content">
     <div class="filters-box">
-        <input type="text" id="filter-query" placeholder="🔍 Куди чи звідки? (напр. Полтава)" oninput="applyFilters()">
+        <input type="text" id="filter-query" list="locations-list" placeholder="🔍 Куди чи звідки? (напр. Полтава)" oninput="applyFilters()">
         <div class="filter-row">
             <input type="date" id="filter-date" onchange="applyFilters()">
             <button class="btn-reset" onclick="resetFilters()">Скинути</button>
@@ -33,9 +33,9 @@
 <div id="tab-create" class="content hidden">
     <h3>Запропонувати поїздку</h3>
     <label>Звідки:</label>
-    <input type="text" id="from" value="Покровське" placeholder="Наприклад: Покровське (центр)">
+    <input type="text" id="from" list="locations-list" value="Покровське" placeholder="Наприклад: Покровське">
     <label>Куди:</label>
-    <input type="text" id="to" value="Полтава" placeholder="Наприклад: Полтава (зал. вокзал)">
+    <input type="text" id="to" list="locations-list" value="Полтава" placeholder="Наприклад: Полтава">
     
     <div class="form-row">
         <div><label>Дата:</label><input type="date" id="date"></div>
@@ -47,7 +47,6 @@
         <div><label>Ціна або коментар:</label><input type="text" id="price" value="100 грн" placeholder="Безкоштовно / 100 грн"></div>
     </div>
     
-    <!-- 🚨 Поле для телефону -->
     <label>Телефон (необов'язково, для зв'язку):</label>
     <input type="tel" id="phone" placeholder="099 123 45 67">
     
@@ -60,9 +59,9 @@
         <h4 style="margin-top:0; margin-bottom:8px;">🔔 Чекаєте на поїздку?</h4>
         <p style="font-size:13px; color:#555; margin-bottom:12px;">Створіть підписку, і бот надішле вам сповіщення в Telegram, щойно водій опублікує відповідний маршрут!</p>
         <label>Звідки:</label>
-        <input type="text" id="sub-from" value="Покровське" placeholder="Наприклад: Покровське">
+        <input type="text" id="sub-from" list="locations-list" value="Покровське" placeholder="Наприклад: Покровське">
         <label>Куди:</label>
-        <input type="text" id="sub-to" value="Полтава" placeholder="Наприклад: Полтава">
+        <input type="text" id="sub-to" list="locations-list" value="Полтава" placeholder="Наприклад: Полтава">
         <label>Дата (необов'язково):</label>
         <input type="date" id="sub-date">
         <button class="btn" style="background:#28a745;" onclick="submitSub()">🔔 Підписатися на сповіщення</button>
@@ -71,7 +70,7 @@
     <div id="subs-list"></div>
 </div>
 
-<!-- 🚨 ВКЛАДКА 4: МОЇ ПОЇЗДКИ (Всі статуси) -->
+<!-- ВКЛАДКА 4: МОЇ ПОЇЗДКИ -->
 <div id="tab-my" class="content hidden">
     <h4 style="margin-top:0; margin-bottom:12px;">👤 Мої поїздки та бронювання</h4>
     <div id="my-rides-list"></div>
@@ -106,6 +105,9 @@
     </div>
 </div>
 
-<script src="app.js?v=8.1"></script>
+<!-- 🚨 Словник міст для підказок -->
+<datalist id="locations-list"></datalist>
+
+<script src="app.js?v=10.0"></script>
 </body>
 </html>
